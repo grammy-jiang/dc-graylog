@@ -1,0 +1,47 @@
+version: "3"
+
+services:
+  mongo:
+    container_name: dc-graylog-mongo
+    env_file:
+      - mongo.env
+    image: mongo:latest
+    networks:
+      - nw-graylog
+    restart: always
+    tty: true
+    volumes:
+      - ./mongo-db:/data/db
+      - ./mongo-home:/home/mongodb
+      - ./mongo-initdb.d:/docker-entrypoint-initdb.d
+  elasticsearch:
+    container_name: dc-graylog-elasticsearch
+    env_file:
+      - elasticsearch.env
+    image: docker.elastic.co/elasticsearch/elasticsearch-oss:6.8.10
+    networks:
+      - nw-graylog
+    restart: always
+    tty: true
+  graylog:
+    container_name: dc-graylog
+    depends_on:
+      - mongo
+      - elasticsearch
+    env_file:
+      - graylog.env
+    image: graylog/graylog:3.3
+    networks:
+      - nw-graylog
+    ports:
+      - "514:514"  # Syslog
+      - "514:514/udp"  # Syslog
+      - "9000:9000"  # Web Interface
+      - "12201:12201"  # GELF
+      - "12201:12201/udp"  # GELF
+    restart: always
+    tty: true
+
+networks:
+  nw-graylog:
+    driver: bridge
